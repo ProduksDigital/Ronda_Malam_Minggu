@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <!-- SEO & Social Share Tags -->
-    <title>Jadwal Ronda Griya Jatiluhur 1</title>
-    <meta name="description" content="Jadwal Ronda Malam Minggu & Laporan Kehadiran Warga Griya Jatiluhur 1">
+    <title>Jadwal Ronda Harian Griya Jatiluhur 1</title>
+    <meta name="description" content="Jadwal Ronda Harian & Laporan Kehadiran Warga Griya Jatiluhur 1">
     <meta name="theme-color" content="#0f172a">
 
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Jadwal Ronda Griya Jatiluhur 1">
-    <meta property="og:description" content="Cek jadwal ronda malam minggu, status kehadiran, dan laporan keamanan warga.">
+    <meta property="og:description" content="Cek jadwal ronda harian, status kehadiran, dan laporan keamanan warga.">
     <meta property="og:image" content="https://drive.google.com/uc?export=view&id=1zILtO4zU9QZMZTY4QqY1dBWeqZoW2mXt">
 
     <!-- React & ReactDOM -->
@@ -24,6 +24,10 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PDF Generation Libraries (jsPDF & autoTable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -81,18 +85,26 @@
         const Send = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
         const ImageIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>;
         const AlertTriangle = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+        const Download = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
 
-        // Data Warga
+        // Data Warga Baru (Urutan per 26 Des 2025)
         const MEMBERS = [
-            "Edi", "Yazid", "Wayan", "Ahmad Tohir", 
-            "Adittya - Blok D", "Benni Asbullah", "Agus Kristiono", 
-            "Triyono", "Dadan", "Candra", "Yunus", "Sabilah", 
-            "Zaenal", "Akhir", "Agus L. S.", "Ariyo J. Putranto", 
-            "Yosi Siregar", "Romi Andi", "Dattu H.", "Hadi WIbowo", 
-            "Aditya - Blok E", "Aris Purwanto", "A. Harianto"
+            "Hadi WIbowo", "Zaenal", 
+            "Edi", "Agus L. S.",
+            "Yazid", "Akhir", 
+            "Wayan", "Ariyo J. Putranto",
+            "Ahmad Tohir", "Yosi Siregar", 
+            "Adittya - Blok D", "Romi Andi",
+            "Benni Asbullah", "Dattu H.", 
+            "Agus Kristiono", "Aditya - Blok E",
+            "Triyono", "Aris Purwanto", 
+            "Dadan", "A. Harianto",
+            "Candra", "Sabilah", 
+            "Yunus"
         ];
 
-        const START_DATE = new Date('2026-01-03'); // Sabtu, 3 Jan 2026
+        const START_DATE = new Date('2025-12-26'); // Jumat, 26 Des 2025
+        const END_DATE = new Date('2026-02-28'); // Sabtu, 28 Feb 2026
 
         const App = () => {
             const [schedule, setSchedule] = useState([]);
@@ -127,27 +139,29 @@
                 return () => window.removeEventListener('scroll', handleScroll);
             }, []);
 
-            // Generate Schedule
+            // Generate Schedule (Harian)
             useEffect(() => {
                 const generateSchedule = () => {
                     const generated = [];
                     let currentDate = new Date(START_DATE);
                     let memberIndex = 0;
                     const totalMembers = MEMBERS.length;
-                    // Generate 156 minggu (52 minggu x 3 tahun)
-                    const weeksToGenerate = 156; 
 
-                    for (let i = 0; i < weeksToGenerate; i++) {
+                    // Loop sampai tanggal akhir
+                    while (currentDate <= END_DATE) {
                         const p1 = MEMBERS[memberIndex % totalMembers];
                         const p2 = MEMBERS[(memberIndex + 1) % totalMembers];
                         
                         generated.push({
-                            id: i,
+                            id: generated.length,
                             date: new Date(currentDate),
                             team: [p1, p2]
                         });
 
-                        currentDate.setDate(currentDate.getDate() + 7);
+                        // Maju 1 hari
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        
+                        // Geser 2 orang
                         memberIndex = (memberIndex + 2) % totalMembers;
                     }
                     setSchedule(generated);
@@ -175,6 +189,10 @@
                 }).format(date);
             };
 
+            const getDayName = (date) => {
+                 return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
+            };
+
             // Helper: Hitung status hari
             const getRelativeStatus = (date) => {
                 const now = new Date();
@@ -188,6 +206,7 @@
                 if (diffDays === 0) return { label: "MALAM INI", color: "bg-red-500 animate-pulse" };
                 if (diffDays === 1) return { label: "BESOK MALAM", color: "bg-orange-500" };
                 if (diffDays > 1 && diffDays < 7) return { label: `${diffDays} HARI LAGI`, color: "bg-blue-500" };
+                if (diffDays < 0) return { label: "SELESAI", color: "bg-slate-600" };
                 return { label: "MENDATANG", color: "bg-slate-600" };
             };
 
@@ -235,11 +254,52 @@
                 }, 2000);
             };
 
+            // --- Fungsi Download PDF ---
+            const handleDownloadPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Judul
+                doc.setFontSize(18);
+                doc.text("Jadwal Ronda Griya Jatiluhur 1", 14, 22);
+                doc.setFontSize(12);
+                doc.text("Periode: 26 Des 2025 - 28 Feb 2026 (Setiap Hari)", 14, 30);
+
+                // Setup Tabel Data
+                const tableColumn = ["No", "Tanggal", "Petugas 1", "Petugas 2"];
+                const tableRows = [];
+
+                schedule.forEach((item, index) => {
+                    const dateStr = formatDate(item.date);
+                    const data = [
+                        index + 1,
+                        dateStr,
+                        item.team[0],
+                        item.team[1]
+                    ];
+                    tableRows.push(data);
+                });
+
+                // Render Tabel
+                doc.autoTable({
+                    head: [tableColumn],
+                    body: tableRows,
+                    startY: 40,
+                    theme: 'grid',
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [37, 99, 235] } // Blue-600
+                });
+
+                // Save PDF
+                doc.save("Jadwal_Ronda_Harian_2025-2026.pdf");
+            };
+
             // Cari Jadwal Terdekat (Realtime Logic)
             const today = new Date();
             today.setHours(0,0,0,0);
             const upcomingSchedule = schedule.find(s => s.date >= today);
-            const nextWeekSchedule = upcomingSchedule ? schedule.find(s => s.id === upcomingSchedule.id + 1) : null;
+            // Untuk harian, id+1 adalah besok
+            const nextShiftSchedule = upcomingSchedule ? schedule.find(s => s.id === upcomingSchedule.id + 1) : null;
             const status = upcomingSchedule ? getRelativeStatus(upcomingSchedule.date) : null;
 
             return (
@@ -251,7 +311,7 @@
                                 {/* LOGO PAGUYUBAN */}
                                 <div className="bg-white p-1 rounded-xl shadow-lg shadow-blue-900/50 overflow-hidden h-12 w-12 flex items-center justify-center">
                                     <img 
-                                        src="logo.JPG" 
+                                        src="https://drive.google.com/uc?export=view&id=1zILtO4zU9QZMZTY4QqY1dBWeqZoW2mXt" 
                                         alt="Logo Paguyuban" 
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
@@ -263,10 +323,19 @@
                                     <Shield className="w-6 h-6 text-blue-600 hidden" />
                                 </div>
                                 <div>
-                                    <h1 className="font-bold text-white text-lg leading-none">Ronda Malam Minggu</h1>
+                                    <h1 className="font-bold text-white text-lg leading-none">Jadwal Ronda Harian</h1>
                                     <p className="text-xs text-yellow-400 font-medium mt-1">Griya Jatiluhur 1</p>
                                 </div>
                             </div>
+
+                            {/* Tombol Download PDF (Header Right) */}
+                            <button 
+                                onClick={handleDownloadPDF}
+                                className="bg-slate-800 p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 transition active:scale-95 border border-slate-700"
+                                title="Download Jadwal PDF"
+                            >
+                                <Download size={20} />
+                            </button>
                         </div>
                     </header>
 
@@ -337,8 +406,8 @@
                                     </div>
                                 </div>
 
-                                {/* JADWAL MINGGU DEPAN (Persiapan) */}
-                                {nextWeekSchedule && (
+                                {/* JADWAL BESOK (Persiapan) */}
+                                {nextShiftSchedule && (
                                     <div className="glass-panel rounded-2xl p-5 border-l-4 border-yellow-500/80 bg-slate-800/40 mt-4 relative overflow-hidden">
                                         <div className="absolute top-0 right-0 p-4 opacity-5">
                                             <AlertTriangle size={80} className="text-yellow-500" />
@@ -348,13 +417,13 @@
                                                 <div className="bg-yellow-500/20 p-1.5 rounded-lg">
                                                     <Calendar size={16} className="text-yellow-400" />
                                                 </div>
-                                                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest">Persiapan Minggu Depan</h3>
+                                                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest">Jadwal Besok</h3>
                                             </div>
                                             
-                                            <h4 className="text-lg font-bold text-white mb-4">{formatDate(nextWeekSchedule.date)}</h4>
+                                            <h4 className="text-lg font-bold text-white mb-4">{formatDate(nextShiftSchedule.date)}</h4>
                                             
                                             <div className="grid grid-cols-2 gap-3">
-                                                {nextWeekSchedule.team.map((member, idx) => (
+                                                {nextShiftSchedule.team.map((member, idx) => (
                                                     <div key={idx} className="flex items-center gap-3 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/50">
                                                         <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
                                                             {member.charAt(0)}
@@ -419,7 +488,7 @@
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex justify-between items-start">
                                                                 <h4 className={`text-base font-semibold mb-2 ${isNext ? 'text-blue-400' : 'text-slate-200'}`}>
-                                                                    Malam Minggu
+                                                                    {getDayName(item.date)}
                                                                 </h4>
                                                                 {isNext && (
                                                                     <Bell size={16} className="text-blue-500 animate-bounce" />
