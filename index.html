@@ -104,7 +104,7 @@
         ];
 
         const START_DATE = new Date('2025-12-26'); // Jumat, 26 Des 2025
-        const END_DATE = new Date('2026-02-28'); // Sabtu, 28 Feb 2026
+        const END_DATE = new Date('2026-06-30'); // Selasa, 30 Juni 2026
 
         const App = () => {
             const [schedule, setSchedule] = useState([]);
@@ -263,7 +263,7 @@
                 doc.setFontSize(18);
                 doc.text("Jadwal Ronda Griya Jatiluhur 1", 14, 22);
                 doc.setFontSize(12);
-                doc.text("Periode: 26 Des 2025 - 28 Feb 2026 (Setiap Hari)", 14, 30);
+                doc.text("Periode: 26 Des 2025 - 30 Juni 2026 (Setiap Hari)", 14, 30);
 
                 // Setup Tabel Data
                 const tableColumn = ["No", "Tanggal", "Petugas 1", "Petugas 2"];
