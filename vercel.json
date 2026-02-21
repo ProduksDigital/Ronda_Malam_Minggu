@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "name": "jadwal-ronda-griya",
+  "cleanUrls": true,
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
