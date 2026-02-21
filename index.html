@@ -2,536 +2,655 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jadwal Ronda Griya Jatiluhur 1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- SEO & Social Share Tags -->
+    <title>Jadwal Ronda Harian Griya Jatiluhur 1</title>
+    <meta name="description" content="Jadwal Ronda Harian & Laporan Kehadiran Warga Griya Jatiluhur 1">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Jadwal Ronda Griya Jatiluhur 1">
+    <meta property="og:description" content="Cek jadwal ronda harian, status kehadiran, dan laporan keamanan warga.">
+    <meta property="og:image" content="https://drive.google.com/uc?export=view&id=1zILtO4zU9QZMZTY4QqY1dBWeqZoW2mXt">
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
-    <!-- Firebase SDK (Compat Version) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <!-- PDF Libraries -->
+    
+    <!-- PDF Generation Libraries (jsPDF & autoTable) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+        }
+        /* Custom File Input Styling */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        .file-upload-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body class="bg-[#0f172a] text-slate-200 pb-20">
+<body>
+    <div id="root"></div>
 
-    <!-- HEADER -->
-    <header class="fixed top-0 inset-x-0 z-40 py-4 px-4 bg-slate-900/80 backdrop-blur-md border-b border-white/5">
-        <div class="max-w-md mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
-                    <i data-lucide="shield" class="text-white w-6 h-6"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-white text-lg leading-none">Ronda Harian</h1>
-                    <p class="text-[10px] text-yellow-400 font-bold uppercase tracking-widest mt-1">Griya Jatiluhur 1</p>
-                </div>
-            </div>
-            <button id="btnDownloadPDF" class="flex flex-col items-center gap-0.5 text-blue-400 active:scale-95 transition-transform">
-                <div id="pdfIcon"><i data-lucide="download" class="w-5 h-5"></i></div>
-                <div id="pdfLoading" class="hidden w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-[8px] font-bold uppercase tracking-tighter">PDF</span>
-            </button>
-        </div>
-    </header>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-    <main class="max-w-md mx-auto px-4 pt-24 space-y-6">
-        <!-- UPCOMING CARD -->
-        <div id="upcomingSection" class="relative">
-            <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl blur opacity-25"></div>
-            <div class="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl">
-                <div class="flex justify-between items-start mb-4">
-                    <span id="todayStatus" class="px-3 py-1 rounded-full text-[10px] font-black shadow-lg">MEMUAT...</span>
-                    <i data-lucide="calendar" class="opacity-70 w-5 h-5"></i>
-                </div>
-                <h2 id="todayDate" class="text-2xl font-bold mb-1">-</h2>
-                <p class="text-blue-100/70 text-sm mb-6 font-medium">Pukul 22:00 WIB - Selesai</p>
-                
-                <div id="todayTeam" class="space-y-3 mb-6">
-                    <!-- Petugas akan muncul di sini -->
-                </div>
+        // --- ICON COMPONENTS ---
+        const Shield = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+        const Calendar = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+        const Search = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
+        const User = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+        const Share2 = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>;
+        const Bell = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>;
+        const Camera = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
+        const CheckCircle = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const Check = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="20 6 9 17 4 12"></polyline></svg>;
+        const X = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        const ClipboardList = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>;
+        const Send = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>;
+        const ImageIcon = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>;
+        const AlertTriangle = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+        const Download = (props) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
 
-                <button id="btnOpenReport" class="w-full bg-white text-blue-700 py-3.5 rounded-xl font-black text-sm shadow-xl active:scale-95 transition flex items-center justify-center gap-2">
-                    <i data-lucide="clipboard-list" class="w-[18px] h-[18px]"></i> ABSEN & LAPOR SEKARANG
-                </button>
-            </div>
-        </div>
-
-        <!-- JADWAL BERIKUTNYA -->
-        <div id="nextSchedulesSection" class="space-y-3">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 px-2">
-                <i data-lucide="clock" class="w-3.5 h-3.5"></i> Jadwal Selanjutnya
-            </h3>
-            <div id="nextSchedulesList" class="grid grid-cols-1 gap-3">
-                <!-- Jadwal selanjutnya muncul di sini -->
-            </div>
-        </div>
-
-        <!-- PENCARIAN -->
-        <div class="sticky top-[80px] z-30 pt-2">
-            <div class="relative">
-                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px]"></i>
-                <input 
-                    id="searchInput"
-                    type="text" 
-                    placeholder="Cari jadwal nama Anda..." 
-                    class="w-full bg-slate-800 border border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-white focus:ring-2 ring-blue-500 outline-none shadow-xl transition-all"
-                />
-            </div>
-        </div>
-
-        <!-- HASIL CARI -->
-        <div id="scheduleContainer" class="space-y-3 pb-10">
-            <!-- Item jadwal terfilter muncul di sini -->
-        </div>
-    </main>
-
-    <!-- MODAL LAPORAN -->
-    <div id="reportModal" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" id="modalOverlay"></div>
-        <div class="relative bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl border-t border-slate-700 overflow-hidden max-h-[92vh] flex flex-col shadow-2xl animate-fade-in">
-            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                <div>
-                    <h3 class="font-black text-xl text-white">Laporan Ronda</h3>
-                    <p id="modalSubDate" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">-</p>
-                </div>
-                <button id="btnCloseModal" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            
-            <div id="modalBody" class="p-6 overflow-y-auto space-y-8 pb-10">
-                <section class="space-y-4">
-                    <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        1. Konfirmasi Kehadiran
-                    </h4>
-                    <div id="attendanceList" class="grid grid-cols-1 gap-3">
-                        <!-- Checkboxes petugas -->
-                    </div>
-                </section>
-
-                <section class="space-y-4">
-                    <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        2. Dokumentasi Gerbang
-                    </h4>
-                    <div class="grid grid-cols-3 gap-3">
-                        <!-- Upload Foto -->
-                        <label class="group relative aspect-square rounded-2xl bg-slate-800 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all active:scale-95">
-                            <input type="file" accept="image/*" capture="environment" class="hidden photo-input" data-gate="front">
-                            <div class="photo-preview hidden absolute inset-0"></div>
-                            <div class="upload-placeholder flex flex-col items-center">
-                                <i data-lucide="camera" class="w-5 h-5 text-slate-500 mb-1"></i>
-                                <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Depan</span>
-                            </div>
-                        </label>
-                        <label class="group relative aspect-square rounded-2xl bg-slate-800 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all active:scale-95">
-                            <input type="file" accept="image/*" capture="environment" class="hidden photo-input" data-gate="side">
-                            <div class="photo-preview hidden absolute inset-0"></div>
-                            <div class="upload-placeholder flex flex-col items-center">
-                                <i data-lucide="camera" class="w-5 h-5 text-slate-500 mb-1"></i>
-                                <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Samping</span>
-                            </div>
-                        </label>
-                        <label class="group relative aspect-square rounded-2xl bg-slate-800 border-2 border-dashed border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all active:scale-95">
-                            <input type="file" accept="image/*" capture="environment" class="hidden photo-input" data-gate="back">
-                            <div class="photo-preview hidden absolute inset-0"></div>
-                            <div class="upload-placeholder flex flex-col items-center">
-                                <i data-lucide="camera" class="w-5 h-5 text-slate-500 mb-1"></i>
-                                <span class="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Belakang</span>
-                            </div>
-                        </label>
-                    </div>
-                </section>
-
-                <button id="btnSubmitReport" class="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition shadow-2xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white shadow-blue-500/20">
-                    <span id="submitLabel" class="flex items-center gap-2"><i data-lucide="send" class="w-[18px] h-[18px]"></i> Kirim & Bagikan Ke WA</span>
-                    <div id="submitLoading" class="hidden w-5 h-5 border-2 border-slate-500 border-t-white rounded-full animate-spin"></div>
-                </button>
-            </div>
-
-            <!-- SUCCESS STATE -->
-            <div id="successState" class="hidden p-10 text-center space-y-4">
-                <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto border border-green-500/50">
-                    <i data-lucide="check-circle" class="w-10 h-10 text-green-500"></i>
-                </div>
-                <h4 class="text-2xl font-black">Berhasil!</h4>
-                <p class="text-slate-400 text-sm px-10">Laporan dan dokumentasi telah tercatat. Link WhatsApp sedang dibuka...</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // --- DATA & KONFIGURASI ---
+        // Data Warga Baru (Urutan per 26 Des 2025)
         const MEMBERS = [
-            "Hadi WIbowo", "Zaenal", "Edi", "Agus L. S.", "Yazid", "Akhir", 
-            "Wayan", "Ariyo J. Putranto", "Ahmad Tohir", "Yosi Siregar", 
-            "Adittya - Blok D", "Romi Andi", "Benni Asbullah", "Dattu H.", 
-            "Agus Kristiono", "Aditya - Blok E", "Triyono", "Aris Purwanto", 
-            "Dadan", "A. Harianto", "Candra", "Sabilah", "Yunus"
+            "Hadi WIbowo", "Zaenal", 
+            "Edi", "Agus L. S.",
+            "Yazid", "Akhir", 
+            "Wayan", "Ariyo J. Putranto",
+            "Ahmad Tohir", "Yosi Siregar", 
+            "Adittya - Blok D", "Romi Andi",
+            "Benni Asbullah", "Dattu H.", 
+            "Agus Kristiono", "Aditya - Blok E",
+            "Triyono", "Aris Purwanto", 
+            "Dadan", "A. Harianto",
+            "Candra", "Sabilah", 
+            "Yunus"
         ];
-        const START_DATE = new Date('2025-12-26');
-        const END_DATE = new Date('2026-04-30');
 
-        let schedule = [];
-        let attendanceData = {};
-        let photosData = { front: null, side: null, back: null };
-        let currentUser = null;
+        const START_DATE = new Date('2025-12-26'); // Jumat, 26 Des 2025
+        const END_DATE = new Date('2026-02-28'); // Sabtu, 28 Feb 2026
 
-        // --- FIREBASE INIT ---
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'griya-jatiluhur-1';
-
-        // --- HELPERS ---
-        const formatDate = (date) => new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(date);
-        const getDayName = (date) => new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
-        
-        const getRelativeStatus = (date) => {
-            const now = new Date(); now.setHours(0, 0, 0, 0);
-            const target = new Date(date); target.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-            if (diffDays === 0) return { label: "MALAM INI", color: "bg-red-500 animate-pulse" };
-            if (diffDays === 1) return { label: "BESOK MALAM", color: "bg-orange-500" };
-            if (diffDays > 1 && diffDays < 7) return { label: `${diffDays} HARI LAGI`, color: "bg-blue-500" };
-            return { label: diffDays < 0 ? "SELESAI" : "MENDATANG", color: "bg-slate-600" };
-        };
-
-        function safeCreateIcons() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        }
-
-        // --- CORE LOGIC ---
-        function generateSchedule() {
-            let currentDate = new Date(START_DATE);
-            let memberIndex = 0;
-            const totalMembers = MEMBERS.length;
-
-            schedule = [];
-            while (currentDate <= END_DATE) {
-                const p1 = MEMBERS[memberIndex % totalMembers];
-                const p2 = MEMBERS[(memberIndex + 1) % totalMembers];
-                schedule.push({
-                    id: schedule.length,
-                    date: new Date(currentDate),
-                    team: [p1, p2]
-                });
-                currentDate.setDate(currentDate.getDate() + 1);
-                memberIndex = (memberIndex + 2) % totalMembers;
-            }
-            renderUI();
-        }
-
-        function renderUI() {
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            const upcoming = schedule.find(s => s.date >= today);
+        const App = () => {
+            const [schedule, setSchedule] = useState([]);
+            const [searchTerm, setSearchTerm] = useState("");
+            const [isHeaderCompact, setIsHeaderCompact] = useState(false);
             
-            if (upcoming) {
-                const status = getRelativeStatus(upcoming.date);
-                const statusEl = document.getElementById('todayStatus');
-                if (statusEl) {
-                    statusEl.innerText = status.label;
-                    statusEl.className = `px-3 py-1 rounded-full text-[10px] font-black ${status.color} shadow-lg`;
-                }
-                
-                const todayDateEl = document.getElementById('todayDate');
-                if (todayDateEl) todayDateEl.innerText = formatDate(upcoming.date);
-                
-                const modalSubDateEl = document.getElementById('modalSubDate');
-                if (modalSubDateEl) modalSubDateEl.innerText = formatDate(upcoming.date);
-
-                const teamHtml = upcoming.team.map(name => `
-                    <div class="flex items-center gap-3 bg-white/10 p-3 rounded-xl border border-white/10">
-                        <div class="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center font-bold text-white uppercase">${name[0]}</div>
-                        <div class="flex-1">
-                            <p class="font-bold">${name}</p>
-                        </div>
-                    </div>
-                `).join('');
-                document.getElementById('todayTeam').innerHTML = teamHtml;
-
-                const idx = schedule.indexOf(upcoming);
-                const nexts = schedule.slice(idx + 1, idx + 4);
-                const nextHtml = nexts.map(item => {
-                    const rel = getRelativeStatus(item.date);
-                    return `
-                        <div class="bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl flex items-center gap-4">
-                            <div class="w-12 h-12 bg-slate-700/50 rounded-xl flex flex-col items-center justify-center shrink-0 border border-slate-600/30">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase leading-none mb-0.5">${new Intl.DateTimeFormat('id-ID', {month: 'short'}).format(item.date)}</span>
-                                <span class="text-lg font-bold text-white leading-none">${item.date.getDate()}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-blue-400 uppercase tracking-wide leading-none mb-1">${getDayName(item.date)}</p>
-                                <p class="text-sm font-bold text-slate-200 truncate">${item.team.join(" & ")}</p>
-                            </div>
-                            <div class="bg-slate-700/30 px-2 py-1 rounded text-[10px] font-bold text-slate-500">${rel.label}</div>
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('nextSchedulesList').innerHTML = nextHtml;
-
-                const attendHtml = upcoming.team.map(name => `
-                    <button 
-                        data-name="${name}"
-                        class="btn-attend flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 bg-slate-800 border-slate-700 text-slate-500"
-                    >
-                        <div class="flex items-center gap-3">
-                            <div class="initial-box w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-slate-700 text-slate-500">${name[0]}</div>
-                            <span class="font-bold">${name}</span>
-                        </div>
-                        <div class="check-icon w-6 h-6 rounded-full border-2 border-slate-600 flex items-center justify-center"></div>
-                    </button>
-                `).join('');
-                document.getElementById('attendanceList').innerHTML = attendHtml;
-                setupAttendClick();
-            }
-            safeCreateIcons();
-        }
-
-        function setupAttendClick() {
-            document.querySelectorAll('.btn-attend').forEach(btn => {
-                btn.onclick = () => {
-                    const name = btn.dataset.name;
-                    attendanceData[name] = !attendanceData[name];
-                    const active = attendanceData[name];
-                    
-                    btn.classList.toggle('bg-blue-600/20', active);
-                    btn.classList.toggle('border-blue-500', active);
-                    btn.classList.toggle('text-white', active);
-                    btn.classList.toggle('bg-slate-800', !active);
-                    btn.classList.toggle('border-slate-700', !active);
-                    btn.classList.toggle('text-slate-500', !active);
-
-                    const initial = btn.querySelector('.initial-box');
-                    initial.classList.toggle('bg-blue-500', active);
-                    initial.classList.toggle('text-white', active);
-                    initial.classList.toggle('bg-slate-700', !active);
-                    initial.classList.toggle('text-slate-500', !active);
-
-                    const check = btn.querySelector('.check-icon');
-                    check.innerHTML = active ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : '';
-                    check.classList.toggle('bg-blue-500', active);
-                    check.classList.toggle('border-blue-500', active);
-                    check.classList.toggle('border-slate-600', !active);
-                    safeCreateIcons();
-                }
+            // --- State untuk Laporan ---
+            const [isReportOpen, setIsReportOpen] = useState(false);
+            // Load attendance dari LocalStorage jika ada
+            const [attendance, setAttendance] = useState(() => {
+                const saved = localStorage.getItem('ronda_attendance');
+                return saved ? JSON.parse(saved) : {};
             });
-        }
+            const [photos, setPhotos] = useState({
+                front: null,
+                side: null, 
+                back: null
+            });
+            const [isSubmitted, setIsSubmitted] = useState(false);
 
-        // --- EXPORT PDF ---
-        document.getElementById('btnDownloadPDF').onclick = async () => {
-            const btn = document.getElementById('btnDownloadPDF');
-            const icon = document.getElementById('pdfIcon');
-            const loader = document.getElementById('pdfLoading');
+            // Simpan attendance ke LocalStorage setiap ada perubahan
+            useEffect(() => {
+                localStorage.setItem('ronda_attendance', JSON.stringify(attendance));
+            }, [attendance]);
 
-            icon.classList.add('hidden');
-            loader.classList.remove('hidden');
-            btn.disabled = true;
+            // Handle Scroll untuk efek sticky header
+            useEffect(() => {
+                const handleScroll = () => {
+                    setIsHeaderCompact(window.scrollY > 20);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
 
-            try {
+            // Generate Schedule (Harian)
+            useEffect(() => {
+                const generateSchedule = () => {
+                    const generated = [];
+                    let currentDate = new Date(START_DATE);
+                    let memberIndex = 0;
+                    const totalMembers = MEMBERS.length;
+
+                    // Loop sampai tanggal akhir
+                    while (currentDate <= END_DATE) {
+                        const p1 = MEMBERS[memberIndex % totalMembers];
+                        const p2 = MEMBERS[(memberIndex + 1) % totalMembers];
+                        
+                        generated.push({
+                            id: generated.length,
+                            date: new Date(currentDate),
+                            team: [p1, p2]
+                        });
+
+                        // Maju 1 hari
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        
+                        // Geser 2 orang
+                        memberIndex = (memberIndex + 2) % totalMembers;
+                    }
+                    setSchedule(generated);
+                };
+
+                generateSchedule();
+            }, []);
+
+            // Filter Logic
+            const filteredSchedule = useMemo(() => {
+                if (!searchTerm) return []; // Return empty if no search
+                const searchLower = searchTerm.toLowerCase();
+                return schedule.filter(item => 
+                    item.team.some(member => member.toLowerCase().includes(searchLower))
+                );
+            }, [schedule, searchTerm]);
+
+            // Helper: Format Tanggal
+            const formatDate = (date) => {
+                return new Intl.DateTimeFormat('id-ID', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                }).format(date);
+            };
+
+            const getDayName = (date) => {
+                 return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(date);
+            };
+
+            // Helper: Hitung status hari
+            const getRelativeStatus = (date) => {
+                const now = new Date();
+                now.setHours(0,0,0,0);
+                const target = new Date(date);
+                target.setHours(0,0,0,0);
+                
+                const diffTime = target - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays === 0) return { label: "MALAM INI", color: "bg-red-500 animate-pulse" };
+                if (diffDays === 1) return { label: "BESOK MALAM", color: "bg-orange-500" };
+                if (diffDays > 1 && diffDays < 7) return { label: `${diffDays} HARI LAGI`, color: "bg-blue-500" };
+                if (diffDays < 0) return { label: "SELESAI", color: "bg-slate-600" };
+                return { label: "MENDATANG", color: "bg-slate-600" };
+            };
+
+            // Helper: Share WhatsApp Generic
+            const handleShare = (item) => {
+                const text = `*Jadwal Ronda Griya Jatiluhur 1*\n\n📅 ${formatDate(item.date)}\n⏰ Pukul 21:00 WIB\n\n👮 Petugas:\n1. ${item.team[0]}\n2. ${item.team[1]}\n\nMohon kehadirannya tepat waktu. Semangat menjaga keamanan lingkungan! 💪`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            };
+            
+            // --- Fungsi Laporan ---
+            const toggleAttendance = (name) => {
+                setAttendance(prev => ({ ...prev, [name]: !prev[name] }));
+            };
+
+            const handlePhotoUpload = (key, event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    setPhotos(prev => ({ ...prev, [key]: url }));
+                }
+            };
+
+            const sendWhatsAppReport = (scheduleItem) => {
+                const dateStr = formatDate(scheduleItem.date);
+                const teamStatus = scheduleItem.team.map(member => 
+                    `- ${member} (${attendance[member] ? '✅ Hadir' : '❌ Belum Absen'})`
+                ).join('\n');
+
+                const reportText = `*LAPORAN RONDA GRIYA JATILUHUR 1*\n` +
+                    `📅 ${dateStr}\n` +
+                    `⏰ Waktu Lapor: ${new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} WIB\n\n` +
+                    `*STATUS KEHADIRAN:*\n${teamStatus}\n\n` +
+                    `*DOKUMENTASI:*\n` +
+                    `📸 Foto Pintu Depan, Samping, & Belakang telah diambil.\n` + 
+                    `(Silakan lampirkan foto dari galeri setelah menekan tombol kirim)\n\n` +
+                    `Laporan selesai. Situasi aman terkendali. 👮‍♂️`;
+
+                // Buka WhatsApp
+                window.open(`https://wa.me/?text=${encodeURIComponent(reportText)}`, '_blank');
+                
+                // Set submitted state
+                setIsSubmitted(true);
+                setTimeout(() => {
+                    setIsReportOpen(false);
+                }, 2000);
+            };
+
+            // --- Fungsi Download PDF ---
+            const handleDownloadPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
+
+                // Judul
                 doc.setFontSize(18);
-                doc.text("JADWAL RONDA WARGA", 105, 15, { align: "center" });
-                doc.setFontSize(14);
-                doc.text("Griya Jatiluhur 1", 105, 22, { align: "center" });
-                doc.setFontSize(10);
-                doc.text(`Periode: ${formatDate(START_DATE)} s/d ${formatDate(END_DATE)}`, 105, 28, { align: "center" });
+                doc.text("Jadwal Ronda Griya Jatiluhur 1", 14, 22);
+                doc.setFontSize(12);
+                doc.text("Periode: 26 Des 2025 - 28 Feb 2026 (Setiap Hari)", 14, 30);
 
-                const tableColumn = ["No", "Hari", "Tanggal", "Petugas 1", "Petugas 2"];
-                const tableRows = schedule.map((item, index) => [
-                    index + 1,
-                    getDayName(item.date),
-                    item.date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-                    item.team[0],
-                    item.team[1]
-                ]);
+                // Setup Tabel Data
+                const tableColumn = ["No", "Tanggal", "Petugas 1", "Petugas 2"];
+                const tableRows = [];
 
+                schedule.forEach((item, index) => {
+                    const dateStr = formatDate(item.date);
+                    const data = [
+                        index + 1,
+                        dateStr,
+                        item.team[0],
+                        item.team[1]
+                    ];
+                    tableRows.push(data);
+                });
+
+                // Render Tabel
                 doc.autoTable({
                     head: [tableColumn],
                     body: tableRows,
-                    startY: 35,
-                    theme: 'striped',
-                    headStyles: { fillColor: [37, 99, 235] },
-                    styles: { fontSize: 9 }
+                    startY: 40,
+                    theme: 'grid',
+                    styles: { fontSize: 10 },
+                    headStyles: { fillColor: [37, 99, 235] } // Blue-600
                 });
 
-                doc.save("Jadwal_Ronda_Griya_Jatiluhur1.pdf");
-            } catch (err) {
-                console.error(err);
-            } finally {
-                icon.classList.remove('hidden');
-                loader.classList.add('hidden');
-                btn.disabled = false;
-            }
-        };
+                // Save PDF
+                doc.save("Jadwal_Ronda_Harian_2025-2026.pdf");
+            };
 
-        // --- PENCARIAN ---
-        document.getElementById('searchInput').oninput = (e) => {
-            const val = e.target.value.toLowerCase();
-            const container = document.getElementById('scheduleContainer');
-            const upSec = document.getElementById('upcomingSection');
-            const nextSec = document.getElementById('nextSchedulesSection');
+            // Cari Jadwal Terdekat (Realtime Logic)
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const upcomingSchedule = schedule.find(s => s.date >= today);
+            // Untuk harian, id+1 adalah besok
+            const nextShiftSchedule = upcomingSchedule ? schedule.find(s => s.id === upcomingSchedule.id + 1) : null;
+            const status = upcomingSchedule ? getRelativeStatus(upcomingSchedule.date) : null;
 
-            if (!val) {
-                container.innerHTML = "";
-                upSec.classList.remove('hidden');
-                nextSec.classList.remove('hidden');
-                return;
-            }
+            return (
+                <div className="min-h-screen pb-20">
+                    {/* Sticky Header */}
+                    <header className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${isHeaderCompact ? 'bg-slate-900/90 backdrop-blur-md shadow-lg py-3' : 'bg-transparent py-5'}`}>
+                        <div className="max-w-md mx-auto px-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                {/* LOGO PAGUYUBAN */}
+                                <div className="bg-white p-1 rounded-xl shadow-lg shadow-blue-900/50 overflow-hidden h-12 w-12 flex items-center justify-center">
+                                    <img 
+                                        src="logo.JPG" 
+                                        alt="Logo Paguyuban" 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null; 
+                                            e.target.style.display = 'none';
+                                            e.target.nextSibling.style.display = 'block';
+                                        }}
+                                    />
+                                    <Shield className="w-6 h-6 text-blue-600 hidden" />
+                                </div>
+                                <div>
+                                    <h1 className="font-bold text-white text-lg leading-none">Jadwal Ronda Harian</h1>
+                                    <p className="text-xs text-yellow-400 font-medium mt-1">Griya Jatiluhur 1</p>
+                                </div>
+                            </div>
 
-            upSec.classList.add('hidden');
-            nextSec.classList.add('hidden');
-
-            const filtered = schedule.filter(item => 
-                item.team.some(m => m.toLowerCase().includes(val))
-            );
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 py-10">Warga tidak ditemukan.</p>`;
-            } else {
-                container.innerHTML = filtered.map(item => `
-                    <div class="bg-slate-800/50 border border-slate-700 p-4 rounded-2xl flex gap-4 animate-fade-in">
-                        <div class="bg-slate-700 w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 border border-slate-600">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">${new Intl.DateTimeFormat('id-ID', {month: 'short'}).format(item.date)}</span>
-                            <span class="text-xl font-bold text-white">${item.date.getDate()}</span>
+                            {/* Tombol Download PDF (Header Right) */}
+                            <button 
+                                onClick={handleDownloadPDF}
+                                className="bg-slate-800 p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 transition active:scale-95 border border-slate-700"
+                                title="Download Jadwal PDF"
+                            >
+                                <Download size={20} />
+                            </button>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="font-bold text-blue-400 mb-1">${getDayName(item.date)}</h4>
-                            <div class="text-sm text-slate-400 space-y-0.5">
-                                ${item.team.map(n => `<p class="flex items-center gap-2"><i data-lucide="user" class="w-3 h-3"></i> ${n}</p>`).join('')}
+                    </header>
+
+                    {/* Spacer for fixed header */}
+                    <div className="h-24"></div>
+
+                    <main className="max-w-md mx-auto px-4 space-y-6">
+                        
+                        {/* 1. HERO SECTION (Realtime Focus) */}
+                        {!searchTerm && upcomingSchedule && (
+                            <>
+                                {/* JADWAL TERDEKAT */}
+                                <div className="relative group">
+                                    {/* Glow Effect */}
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+                                    
+                                    <div className="relative hero-gradient rounded-2xl p-6 text-white shadow-2xl overflow-hidden">
+                                        {/* Decorative circles */}
+                                        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl"></div>
+                                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black opacity-10 rounded-full blur-2xl"></div>
+
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${status.color} text-white shadow-lg`}>
+                                                    {status.label}
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleShare(upcomingSchedule)}
+                                                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition active:scale-95"
+                                                    title="Share Jadwal ke WhatsApp"
+                                                >
+                                                    <Share2 size={18} className="text-white" />
+                                                </button>
+                                            </div>
+
+                                            <div className="mb-6">
+                                                <p className="text-blue-100 text-sm font-medium mb-1">Jadwal Terdekat</p>
+                                                <h2 className="text-2xl font-bold">{formatDate(upcomingSchedule.date)}</h2>
+                                            </div>
+
+                                            <div className="space-y-3 mb-6">
+                                                {upcomingSchedule.team.map((member, idx) => (
+                                                    <div key={idx} className="flex items-center gap-4 bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
+                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-sm font-bold shadow-lg">
+                                                            {member.charAt(0)}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <span className="font-semibold text-lg block leading-tight">{member}</span>
+                                                            {attendance[member] && (
+                                                                <span className="text-[10px] text-green-300 flex items-center gap-1 mt-1 bg-green-500/20 w-fit px-2 py-0.5 rounded-full">
+                                                                    <Check size={10} /> Hadir
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Tombol Lapor */}
+                                            <button 
+                                                onClick={() => setIsReportOpen(true)}
+                                                className="w-full bg-white text-blue-600 py-3 rounded-xl font-bold text-sm hover:bg-blue-50 transition shadow-lg flex items-center justify-center gap-2"
+                                            >
+                                                <ClipboardList size={18} />
+                                                Isi Absensi & Laporan
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* JADWAL BESOK (Persiapan) */}
+                                {nextShiftSchedule && (
+                                    <div className="glass-panel rounded-2xl p-5 border-l-4 border-yellow-500/80 bg-slate-800/40 mt-4 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                                            <AlertTriangle size={80} className="text-yellow-500" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="bg-yellow-500/20 p-1.5 rounded-lg">
+                                                    <Calendar size={16} className="text-yellow-400" />
+                                                </div>
+                                                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-widest">Jadwal Besok</h3>
+                                            </div>
+                                            
+                                            <h4 className="text-lg font-bold text-white mb-4">{formatDate(nextShiftSchedule.date)}</h4>
+                                            
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {nextShiftSchedule.team.map((member, idx) => (
+                                                    <div key={idx} className="flex items-center gap-3 bg-slate-800/80 p-2.5 rounded-lg border border-slate-700/50">
+                                                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                                            {member.charAt(0)}
+                                                        </div>
+                                                        <span className="text-sm font-medium text-slate-200 truncate">{member}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* 2. STICKY SEARCH BAR */}
+                        <div className="sticky top-[70px] z-30 pt-2 pb-2 -mx-1 px-1 bg-[#0f172a]">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Search className="h-5 w-5 text-slate-500" />
+                                </div>
+                                <input
+                                    type="text"
+                                    className="block w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-800/80 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                                    placeholder="Cari nama warga..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </div>
+
+                        {/* 3. SCHEDULE LIST */}
+                        <div className="space-y-3 pb-8">
+                            {searchTerm ? (
+                                <>
+                                    <div className="flex items-center justify-between px-1 mb-2">
+                                        <h3 className="text-slate-400 text-sm font-semibold uppercase tracking-wider">
+                                            Hasil Pencarian
+                                        </h3>
+                                        <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-lg">
+                                            {filteredSchedule.length} ditemukan
+                                        </span>
+                                    </div>
+
+                                    {filteredSchedule.length > 0 ? (
+                                        filteredSchedule.map((item) => {
+                                            const isNext = upcomingSchedule && item.id === upcomingSchedule.id;
+                                            return (
+                                                <div 
+                                                    key={item.id} 
+                                                    className={`glass-panel rounded-2xl p-5 transition-all ${isNext ? 'border-blue-500/30 bg-blue-900/10' : 'hover:bg-slate-800/80'}`}
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl shrink-0 ${isNext ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'bg-slate-800 text-slate-400'}`}>
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                                                                {new Intl.DateTimeFormat('id-ID', { month: 'short' }).format(item.date)}
+                                                            </span>
+                                                            <span className="text-2xl font-bold leading-none mt-0.5">
+                                                                {item.date.getDate()}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <h4 className={`text-base font-semibold mb-2 ${isNext ? 'text-blue-400' : 'text-slate-200'}`}>
+                                                                    {getDayName(item.date)}
+                                                                </h4>
+                                                                {isNext && (
+                                                                    <Bell size={16} className="text-blue-500 animate-bounce" />
+                                                                )}
+                                                            </div>
+                                                            
+                                                            <div className="space-y-1.5">
+                                                                {item.team.map((member, idx) => (
+                                                                    <div key={idx} className="flex items-center gap-2.5">
+                                                                        <User size={14} className={isNext ? "text-blue-400" : "text-slate-500"} />
+                                                                        <span className={`text-sm truncate ${isNext ? 'text-white font-medium' : 'text-slate-400'}`}>
+                                                                            {member}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <div className="bg-slate-800 inline-flex p-4 rounded-full mb-4 opacity-50">
+                                                <Search className="w-8 h-8 text-slate-400" />
+                                            </div>
+                                            <p className="text-slate-400 font-medium">Tidak ada jadwal untuk nama tersebut</p>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="text-center py-12 px-4">
+                                    <p className="text-yellow-400 text-sm font-medium">
+                                        Ketik nama warga di atas untuk melihat daftar lengkap jadwal ronda.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* --- MODAL LAPORAN --- */}
+                    {isReportOpen && upcomingSchedule && (
+                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+                            {/* Backdrop */}
+                            <div 
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                                onClick={() => !isSubmitted && setIsReportOpen(false)}
+                            ></div>
+                            
+                            {/* Modal Content */}
+                            <div className="bg-slate-900 w-full max-w-lg rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700 max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl flex flex-col">
+                                
+                                {/* Header */}
+                                <div className="sticky top-0 bg-slate-900/95 backdrop-blur z-20 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Laporan Ronda</h3>
+                                        <p className="text-xs text-slate-400">{formatDate(upcomingSchedule.date)}</p>
+                                    </div>
+                                    <button onClick={() => setIsReportOpen(false)} className="p-2 bg-slate-800 rounded-full hover:bg-slate-700">
+                                        <X size={20} className="text-slate-400" />
+                                    </button>
+                                </div>
+
+                                <div className="p-6 space-y-8 pb-10">
+                                    {/* 1. Absensi */}
+                                    <section>
+                                        <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <User size={16} /> Absensi Kehadiran
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {upcomingSchedule.team.map((member) => (
+                                                <div 
+                                                    key={member}
+                                                    onClick={() => toggleAttendance(member)}
+                                                    className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                                                        attendance[member] 
+                                                        ? 'bg-blue-600/20 border-blue-500' 
+                                                        : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                                                            attendance[member] ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'
+                                                        }`}>
+                                                            {member.charAt(0)}
+                                                        </div>
+                                                        <span className={attendance[member] ? 'text-white font-semibold' : 'text-slate-400'}>
+                                                            {member}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                                                        attendance[member] ? 'bg-blue-600 border-blue-600' : 'border-slate-600'
+                                                    }`}>
+                                                        {attendance[member] && <Check size={14} className="text-white" />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    {/* 2. Dokumentasi */}
+                                    <section>
+                                        <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <Camera size={16} /> Dokumentasi Kunci
+                                        </h4>
+                                        <p className="text-xs text-slate-400 mb-4 bg-slate-800 p-3 rounded-lg border border-slate-700 flex gap-2">
+                                            <ImageIcon size={16} className="shrink-0 mt-0.5 text-blue-400"/>
+                                            <span>
+                                                Pilih "Kamera" untuk foto langsung atau "File/Galeri" untuk mengambil dari galeri HP.
+                                            </span>
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            {['front', 'side', 'back'].map((side) => (
+                                                <div key={side} className="space-y-2">
+                                                    <label className="text-xs text-slate-400 font-medium ml-1 capitalize">
+                                                        Pintu {side === 'front' ? 'Depan' : side === 'side' ? 'Samping' : 'Belakang'}
+                                                    </label>
+                                                    <div className={`relative aspect-square rounded-xl border-2 border-dashed transition-all overflow-hidden group ${
+                                                        photos[side] ? 'border-green-500 bg-slate-800' : 'border-slate-700 hover:border-blue-500 hover:bg-slate-800'
+                                                    }`}>
+                                                        {photos[side] ? (
+                                                            <img src={photos[side]} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
+                                                                <Camera size={24} className="mb-2" />
+                                                                <span className="text-[10px]">Pilih Foto</span>
+                                                            </div>
+                                                        )}
+                                                        <div className="file-upload-wrapper absolute inset-0">
+                                                            {/* capture="environment" dihapus agar bisa akses galeri */}
+                                                            <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(side, e)} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    <button 
+                                        onClick={() => sendWhatsAppReport(upcomingSchedule)}
+                                        className="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-900/50 hover:bg-green-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Send size={20} />
+                                        Kirim Laporan via WhatsApp
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Floating Credit */}
+                    <div className="fixed bottom-6 inset-x-0 text-center pointer-events-none z-0">
+                        <p className="text-[10px] text-yellow-400 font-medium bg-slate-900/80 backdrop-blur inline-block px-3 py-1 rounded-full border border-slate-800/50">
+                            &copy; 2026 Griya Jatiluhur 1
+                        </p>
                     </div>
-                `).join('');
-                safeCreateIcons();
-            }
+                </div>
+            );
         };
 
-        // --- MODAL & PELAPORAN ---
-        const modal = document.getElementById('reportModal');
-        const openReportBtn = document.getElementById('btnOpenReport');
-        if (openReportBtn) openReportBtn.onclick = () => modal.classList.remove('hidden');
-        
-        const closeModalBtn = document.getElementById('btnCloseModal');
-        if (closeModalBtn) closeModalBtn.onclick = () => modal.classList.add('hidden');
-        
-        const modalOverlay = document.getElementById('modalOverlay');
-        if (modalOverlay) modalOverlay.onclick = () => modal.classList.add('hidden');
-
-        // Preview Foto
-        document.querySelectorAll('.photo-input').forEach(input => {
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                const gate = input.dataset.gate;
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        photosData[gate] = ev.target.result;
-                        const preview = input.parentElement.querySelector('.photo-preview');
-                        const placeholder = input.parentElement.querySelector('.upload-placeholder');
-                        preview.innerHTML = `<img src="${ev.target.result}" class="w-full h-full object-cover">
-                                             <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="camera" class="text-white w-6 h-6"></i></div>
-                                             <div class="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-lg"><i data-lucide="check" class="text-white w-2.5 h-2.5"></i></div>`;
-                        preview.classList.remove('hidden');
-                        placeholder.classList.add('hidden');
-                        safeCreateIcons();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-        });
-
-        document.getElementById('btnSubmitReport').onclick = async () => {
-            if (!currentUser) {
-                console.error("Auth belum siap");
-                return;
-            }
-
-            const btn = document.getElementById('btnSubmitReport');
-            const label = document.getElementById('submitLabel');
-            const loader = document.getElementById('submitLoading');
-            const success = document.getElementById('successState');
-            const body = document.getElementById('modalBody');
-
-            label.classList.add('hidden');
-            loader.classList.remove('hidden');
-            btn.disabled = true;
-
-            try {
-                const today = new Date(); today.setHours(0, 0, 0, 0);
-                const current = schedule.find(s => s.date.toDateString() === today.toDateString()) || schedule.find(s => s.date >= today);
-
-                const report = {
-                    dateLabel: formatDate(current.date),
-                    attendance: current.team.map(n => ({ name: n, status: attendanceData[n] ? 'Hadir' : 'Absen' })),
-                    status: "Aman",
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Path sesuai aturan Canvas: /artifacts/{appId}/public/data/{collectionName}
-                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('reports').add(report);
-
-                // Format WhatsApp
-                const attendTxt = current.team.map(n => `- ${n} (${attendanceData[n] ? '✅ Hadir' : '❌ Absen'})`).join('\n');
-                const photoTxt = `📸 Dokumentasi: Depan(${photosData.front ? '✅' : '❌'}), Samping(${photosData.side ? '✅' : '❌'}), Belakang(${photosData.back ? '✅' : '❌'})`;
-                const waMsg = `*LAPORAN RONDA GRIYA JATILUHUR 1*\n📅 ${formatDate(current.date)}\n\n*KEHADIRAN:*\n${attendTxt}\n\n${photoTxt}\n\nSituasi aman terkendali. 👮‍♂️`;
-                
-                window.open(`https://wa.me/?text=${encodeURIComponent(waMsg)}`, '_blank');
-
-                body.classList.add('hidden');
-                success.classList.remove('hidden');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    body.classList.remove('hidden');
-                    success.classList.add('hidden');
-                    label.classList.remove('hidden');
-                    loader.classList.add('hidden');
-                    btn.disabled = false;
-                }, 3000);
-
-            } catch (err) {
-                console.error("Firebase Error:", err);
-                btn.disabled = false;
-                label.classList.remove('hidden');
-                loader.classList.add('hidden');
-            }
-        };
-
-        // --- INISIALISASI ---
-        window.addEventListener('load', async () => {
-            try {
-                // RULE 3: Auth Before Queries
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
-                } else {
-                    await auth.signInAnonymously();
-                }
-
-                auth.onAuthStateChanged((user) => {
-                    currentUser = user;
-                    if (user) {
-                        generateSchedule();
-                        safeCreateIcons();
-                    }
-                });
-            } catch (error) {
-                console.error("Auth Initialization Failed:", error);
-            }
-        });
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
