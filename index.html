@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ronda Malam Minggu - GJ1</title>
+    <title>Ronda Malam - Griya Jatiluhur 1</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -15,10 +15,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #e2e8f0; margin: 0; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .hero-gradient { background: linear-gradient(135deg, #1e40af 0%, #4f46e5 100%); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .hero-grad { background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%); }
         input[type="file"] { display: none; }
+        .tap-effect:active { transform: scale(0.96); transition: 0.1s; }
     </style>
 </head>
 <body>
@@ -27,30 +28,25 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // PASTE URL WEB APP ANDA DI SINI
-        const SCRIPT_URL = "https://ronda-malam-psi.vercel.app";
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = "URL_WEB_APP_ANDA";
 
         const MEMBERS = ["Hadi WIbowo", "Zaenal", "Edi", "Agus L. S.", "Yazid", "Akhir", "Wayan", "Ariyo J. Putranto", "Ahmad Tohir", "Yosi Siregar", "Adittya - Blok D", "Romi Andi", "Benni Asbullah", "Dattu H.", "Agus Kristiono", "Aditya - Blok E", "Triyono", "Aris Purwanto", "Dadan", "A. Harianto", "Candra", "Sabilah", "Yunus"];
         const START_DATE = new Date('2026-03-07'); 
-        const END_DATE = new Date('2026-12-30');
 
         const App = () => {
             const [schedule, setSchedule] = useState([]);
             const [attendance, setAttendance] = useState({});
-            const [photos, setPhotos] = useState({ depan: false, samping: false, belakang: false });
-            const [loading, setLoading] = useState(false);
+            const [hasPhotos, setHasPhotos] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
 
             useEffect(() => {
                 const generated = [];
                 let curr = new Date(START_DATE);
                 let idx = 0;
-                while (curr <= END_DATE) {
+                while (generated.length < 45) {
                     if (curr.getDay() === 6) {
-                        generated.push({
-                            id: curr.getTime(),
-                            date: new Date(curr),
-                            team: [MEMBERS[idx % MEMBERS.length], MEMBERS[(idx + 1) % MEMBERS.length]]
-                        });
+                        generated.push({ id: curr.getTime(), date: new Date(curr), team: [MEMBERS[idx % MEMBERS.length], MEMBERS[(idx + 1) % MEMBERS.length]] });
                         idx = (idx + 2) % MEMBERS.length;
                     }
                     curr.setDate(curr.getDate() + 1);
@@ -58,137 +54,101 @@
                 setSchedule(generated);
             }, []);
 
-            const formatDate = (d) => new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
-
             const todayTask = useMemo(() => {
                 const now = new Date();
                 now.setHours(0,0,0,0);
                 return schedule.find(s => s.date >= now) || schedule[0];
             }, [schedule]);
 
-            const nextWeekTask = useMemo(() => {
-                if (!todayTask) return null;
-                const idx = schedule.findIndex(s => s.id === todayTask.id);
-                return schedule[idx + 1] || null;
-            }, [schedule, todayTask]);
+            const formatDate = (d) => new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
 
-            const handleSend = async () => {
-                if (!photos.depan || !photos.samping || !photos.belakang) {
-                    alert("⚠️ Harap ambil foto di 3 lokasi pintu!");
-                    return;
-                }
-
-                setLoading(true);
+            const handleSubmit = () => {
+                setIsSaving(true);
                 const now = new Date();
-                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
-                
+                const jam = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB";
                 const tgl = formatDate(todayTask.date);
-                const wkt = timeStr + " WIB";
-                const p1 = todayTask.team[0];
-                const s1 = attendance[p1] ? "Hadir" : "Absen";
-                const p2 = todayTask.team[1];
-                const s2 = attendance[p2] ? "Hadir" : "Absen";
+                
+                const p1 = todayTask.team[0], p2 = todayTask.team[1];
+                const s1 = attendance[p1] ? "✅ Hadir" : "❌ Absen";
+                const s2 = attendance[p2] ? "✅ Hadir" : "❌ Absen";
+                const fotoStr = hasPhotos ? "Ada Foto" : "Tanpa Foto";
 
-                // Gunakan URLSearchParams untuk kompatibilitas no-cors maksimal
+                // Kirim ke Google Sheet (Metode No-Cors yang Terbukti Berhasil)
                 const params = new URLSearchParams();
                 params.append('tanggal', tgl);
-                params.append('waktu', wkt);
+                params.append('waktu', jam);
                 params.append('petugas1', p1);
                 params.append('status1', s1);
                 params.append('petugas2', p2);
                 params.append('status2', s2);
+                params.append('foto_status', fotoStr);
 
-                try {
-                    // Kirim ke Google Sheets
-                    fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        body: params
-                    });
+                fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: params });
 
-                    // Buka WhatsApp setelah jeda kecil
-                    setTimeout(() => {
-                        const waText = `*LAPORAN RONDA GRIYA JATILUHUR 1*\n` +
-                                       `📅 ${tgl}\n` +
-                                       `⏰ Waktu Lapor: ${wkt}\n\n` +
-                                       `*STATUS KEHADIRAN:*\n` +
-                                       `- ${p1} (${s1})\n` +
-                                       `- ${p2} (${s2})\n\n` +
-                                       `*DOKUMENTASI:*\n📸 Foto Pintu Depan, Samping, & Belakang telah diambil.\n\n` +
-                                       `Laporan selesai. Situasi aman terkendali. 👮‍♂️`;
-
-                        window.open(`https://wa.me/?text=${encodeURIComponent(waText)}`, '_blank');
-                        setLoading(false);
-                    }, 800);
-
-                } catch (e) {
-                    alert("Gagal koneksi.");
-                    setLoading(false);
-                }
+                // Redirect ke WA setelah jeda singkat
+                setTimeout(() => {
+                    const waMsg = `*LAPORAN RONDA GRIYA JATILUHUR 1*\n📅 ${tgl}\n⏰ Waktu Lapor: ${jam}\n\n*STATUS KEHADIRAN:*\n- ${p1} (${s1})\n- ${p2} (${s2})\n\n*DOKUMENTASI:*\n${hasPhotos ? "📸 Foto area telah diambil." : "⚠️ Foto menyusul."}\n\nLaporan selesai. Situasi aman terkendali. 👮‍♂️`;
+                    window.open(`https://wa.me/?text=${encodeURIComponent(waMsg)}`, '_blank');
+                    setIsSaving(false);
+                }, 1000);
             };
 
-            const downloadPDF = () => {
+            const downloadJadwal = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.text("JADWAL RONDA GJ1 2026", 105, 15, { align: "center" });
-                const rows = schedule.map((s, i) => [i + 1, formatDate(s.date), s.team.join(" & ")]);
-                doc.autoTable({ head: [['No', 'Tanggal', 'Petugas']], body: rows, startY: 25 });
-                doc.save("Jadwal_Ronda_2026.pdf");
+                doc.text("JADWAL RONDA GJ1 - 2026", 105, 15, { align: "center" });
+                const data = schedule.map((s, i) => [i + 1, formatDate(s.date), s.team.join(" & ")]);
+                doc.autoTable({ head: [['No', 'Tanggal', 'Petugas']], body: data, startY: 25 });
+                doc.save("Jadwal_Ronda_GJ1.pdf");
             };
 
             if (schedule.length === 0) return null;
 
             return (
-                <div className="max-w-md mx-auto p-4 space-y-6">
-                    <header className="py-4">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Ronda Malam Minggu</h1>
-                        <p className="text-blue-400 text-xs font-bold uppercase tracking-widest">Griya Jatiluhur 1</p>
+                <div className="max-w-md mx-auto min-h-screen p-5 flex flex-col gap-6 pb-20">
+                    <header>
+                        <h1 className="text-2xl font-bold tracking-tight">Laporan Ronda GJ1</h1>
+                        <p className="text-blue-400 text-xs font-bold uppercase tracking-widest">Aman Terkendali 👮‍♂️</p>
                     </header>
 
-                    <div className="hero-gradient rounded-[32px] p-6 shadow-2xl">
-                        <h2 className="text-white font-bold text-lg mb-1">{formatDate(todayTask.date)}</h2>
-                        <p className="text-blue-100 text-[11px] mb-6 opacity-80 italic">Absen dan ambil foto lokasi:</p>
-                        
-                        <div className="space-y-3 mb-6">
-                            {todayTask.team.map(name => (
-                                <div key={name} onClick={() => setAttendance(p => ({...p, [name]: !p[name]}))}
-                                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${attendance[name] ? 'bg-white text-blue-700 shadow-lg scale-105' : 'bg-black/20 text-white border border-white/10'}`}>
-                                    <span className="font-bold">{name}</span>
-                                    <span>{attendance[name] ? "✅" : "⭕"}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3 mb-6">
-                            {['depan', 'samping', 'belakang'].map(loc => (
-                                <label key={loc} className="flex flex-col items-center gap-2">
-                                    <div className={`w-full aspect-square rounded-2xl border-2 border-dashed flex items-center justify-center transition-all ${photos[loc] ? 'bg-green-500/30 border-green-400' : 'bg-black/20 border-white/20'}`}>
-                                        <svg className={`w-6 h-6 ${photos[loc] ? 'text-green-400' : 'text-white/40'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                    <div className="hero-grad rounded-[32px] p-6 shadow-2xl relative overflow-hidden">
+                        <div className="relative z-10">
+                            <span className="bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Tugas Malam Minggu</span>
+                            <h2 className="text-xl font-bold mt-3 mb-6">{formatDate(todayTask.date)}</h2>
+                            
+                            <div className="space-y-3 mb-8">
+                                {todayTask.team.map(name => (
+                                    <div key={name} onClick={() => setAttendance(p => ({...p, [name]: !p[name]}))}
+                                        className={`flex items-center justify-between p-5 rounded-2xl cursor-pointer tap-effect transition-all ${attendance[name] ? 'bg-white text-blue-800 shadow-xl' : 'bg-black/20 border border-white/10'}`}>
+                                        <span className="font-bold">{name}</span>
+                                        <span className="text-xl">{attendance[name] ? "✅" : "⭕"}</span>
                                     </div>
-                                    <span className="text-[9px] font-bold uppercase text-white/50">Pintu {loc}</span>
-                                    <input type="file" accept="image/*" capture="environment" onChange={() => setPhotos(p => ({...p, [loc]: true}))} />
-                                </label>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
 
-                        <button onClick={handleSend} disabled={loading}
-                            className="w-full bg-white text-blue-700 py-4 rounded-2xl font-bold shadow-xl disabled:opacity-50 active:scale-95 transition-all">
-                            {loading ? "Menyimpan Data..." : "Kirim Absen & Lapor WA"}
-                        </button>
+                            <label className="block mb-8 cursor-pointer tap-effect">
+                                <div className={`p-5 rounded-2xl border-2 border-dashed flex items-center justify-center gap-3 transition-all ${hasPhotos ? 'bg-green-500/20 border-green-400 text-green-400' : 'bg-black/20 border-white/20'}`}>
+                                    <span className="text-xl">{hasPhotos ? "✅" : "📸"}</span>
+                                    <span className="font-bold text-sm uppercase">{hasPhotos ? "Foto Terpilih" : "Ambil Foto Lokasi"}</span>
+                                </div>
+                                <input type="file" accept="image/*" multiple onChange={() => setHasPhotos(true)} />
+                            </label>
+
+                            <button onClick={handleSubmit} disabled={isSaving}
+                                className="w-full bg-white text-blue-700 py-5 rounded-2xl font-bold text-lg shadow-xl tap-effect disabled:opacity-50">
+                                {isSaving ? "Menyimpan Data..." : "Kirim Absen & Lapor WA"}
+                            </button>
+                        </div>
                     </div>
 
-                    {nextWeekTask && (
-                        <div className="glass-card p-4 rounded-2xl flex justify-between items-center opacity-70">
-                            <div>
-                                <p className="text-[10px] text-blue-400 font-bold mb-1 uppercase tracking-wider">Sabtu Depan</p>
-                                <p className="text-white text-sm font-semibold">{nextWeekTask.team.join(" & ")}</p>
-                            </div>
-                        </div>
-                    )}
-
-                    <button onClick={downloadPDF} className="w-full py-4 text-xs text-slate-500 font-bold uppercase tracking-widest hover:text-white transition-colors">
+                    <button onClick={downloadJadwal} className="w-full glass py-4 rounded-2xl font-bold text-sm text-slate-300 flex items-center justify-center gap-3 tap-effect">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         Download Jadwal 1 Tahun
                     </button>
+
+                    <footer className="mt-auto text-center opacity-30">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em]">Griya Jatiluhur 1 © 2026</p>
+                    </footer>
                 </div>
             );
         };
